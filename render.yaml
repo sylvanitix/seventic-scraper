@@ -2,15 +2,8 @@ services:
   - type: web
     name: seventic-scraper
     env: python
-    buildCommand: |
-      chmod +x install_chrome.sh
-      ./install_chrome.sh
-      pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
-      - key: CHROME_BIN
-        value: /usr/bin/chromium-browser
-      - key: CHROMEDRIVER_PATH
-        value: /usr/bin/chromedriver

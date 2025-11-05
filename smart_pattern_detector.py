@@ -5,13 +5,9 @@ Détecte automatiquement les patterns répétitifs sur une page
 
 from bs4 import BeautifulSoup
 from collections import defaultdict
+import requests
 import time
 import re
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-import os
 
 
 class SmartPatternDetector:
@@ -21,40 +17,10 @@ class SmartPatternDetector:
     """
 
     def __init__(self):
-        self.driver = self.setup_driver()
-
-    def setup_driver(self):
-        """Configure Chrome en mode headless pour Render"""
-        chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--window-size=1920,1080')
-        chrome_options.add_argument('--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-
-        # Pour Render.com : utilise chromium si disponible
-        chrome_binary = os.environ.get('CHROME_BIN', '/usr/bin/chromium-browser')
-        if os.path.exists(chrome_binary):
-            chrome_options.binary_location = chrome_binary
-
-        try:
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-            driver.set_page_load_timeout(30)
-            return driver
-        except Exception as e:
-            print(f"⚠️ Erreur Selenium: {e}")
-            print("⚠️ Le scraper fonctionnera en mode limité")
-            return None
-
-    def close_driver(self):
-        """Ferme le driver proprement"""
-        if self.driver:
-            try:
-                self.driver.quit()
-            except:
-                pass
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        })
 
     def get_element_signature(self, element):
         """
@@ -242,16 +208,10 @@ class SmartPatternDetector:
         try:
             print(f"🔍 Analyse de {url}...")
 
-            if not self.driver:
-                return {
-                    'success': False,
-                    'error': 'Driver Selenium non disponible'
-                }
-
-            # Récupère le HTML avec Selenium
-            self.driver.get(url)
-            time.sleep(3)  # Attendre le chargement JavaScript
-            html = self.driver.page_source
+            # Récupère le HTML avec requests
+            response = self.session.get(url, timeout=15)
+            response.raise_for_status()
+            html = response.text
 
             # Détecte les patterns
             patterns = self.find_repeating_patterns(html)
@@ -311,10 +271,6 @@ class SmartPatternDetector:
             else:
                 log(f"🎯 Utilisation de l'index: {pattern_index}")
 
-            if not self.driver:
-                log(f"❌ Driver Selenium non disponible")
-                return []
-
             all_companies = []
             visited_urls = set()
             urls_to_visit = [url]
@@ -328,10 +284,10 @@ class SmartPatternDetector:
                 visited_urls.add(current_url)
                 log(f"📄 Page {len(visited_urls)}/{max_pages}: {current_url}")
 
-                # Récupère le HTML avec Selenium
-                self.driver.get(current_url)
-                time.sleep(3)  # Attendre le chargement JavaScript
-                html = self.driver.page_source
+                # Récupère le HTML avec requests
+                response = self.session.get(current_url, timeout=15)
+                response.raise_for_status()
+                html = response.text
                 log(f"   HTML chargé: {len(html)} caractères")
 
                 # Détecte les patterns
