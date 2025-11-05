@@ -8,3 +8,8 @@ lxml==5.1.0
 gunicorn==21.2.0
 Werkzeug==3.0.1
 numpy>=1.26.0
+selenium==4.15.2
+webdriver-manager==4.0.1
+python-dotenv==1.0.0
+colorama==0.4.6
+tqdm==4.66.1
