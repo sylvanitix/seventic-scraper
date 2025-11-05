@@ -4,11 +4,8 @@ Détecte automatiquement les patterns répétitifs sur une page
 """
 
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from collections import defaultdict
+import requests
 import time
 import re
 
@@ -20,31 +17,10 @@ class SmartPatternDetector:
     """
 
     def __init__(self):
-        self.driver = None
-
-    def setup_driver(self):
-        """Configure le navigateur"""
-        if self.driver:
-            return
-
-        chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--window-size=1920,1080')
-        chrome_options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36')
-
-        self.driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=chrome_options
-        )
-
-    def close_driver(self):
-        """Ferme le navigateur"""
-        if self.driver:
-            self.driver.quit()
-            self.driver = None
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        })
 
     def get_element_signature(self, element):
         """
@@ -229,13 +205,12 @@ class SmartPatternDetector:
         Analyse une URL et retourne les patterns détectés avec leurs colonnes
         """
         try:
-            self.setup_driver()
-
             print(f"🔍 Analyse de {url}...")
-            self.driver.get(url)
-            time.sleep(3)  # Attendre le chargement
 
-            html = self.driver.page_source
+            # Récupère le HTML avec requests
+            response = self.session.get(url, timeout=15)
+            response.raise_for_status()
+            html = response.text
 
             # Détecte les patterns
             patterns = self.find_repeating_patterns(html)
@@ -270,8 +245,6 @@ class SmartPatternDetector:
                 'success': False,
                 'error': str(e)
             }
-        finally:
-            self.close_driver()
 
     def scrape_with_mapping(self, url, pattern_signature=None, pattern_index=0, company_name_column='text', max_pages=5, logger=None):
         """
@@ -291,8 +264,7 @@ class SmartPatternDetector:
                 logger(message)
 
         try:
-            self.setup_driver()
-            log(f"🚀 Driver configuré, début du scraping...")
+            log(f"🚀 Début du scraping...")
             if pattern_signature:
                 log(f"🎯 Recherche du pattern: {pattern_signature}")
             else:
@@ -311,10 +283,10 @@ class SmartPatternDetector:
                 visited_urls.add(current_url)
                 log(f"📄 Page {len(visited_urls)}/{max_pages}: {current_url}")
 
-                self.driver.get(current_url)
-                time.sleep(2)
-
-                html = self.driver.page_source
+                # Récupère le HTML avec requests
+                response = self.session.get(current_url, timeout=15)
+                response.raise_for_status()
+                html = response.text
                 log(f"   HTML chargé: {len(html)} caractères")
 
                 # Détecte les patterns
@@ -401,8 +373,6 @@ class SmartPatternDetector:
             import traceback
             log(traceback.format_exc())
             return []
-        finally:
-            self.close_driver()
 
     def find_next_page_urls(self, current_url, html):
         """
