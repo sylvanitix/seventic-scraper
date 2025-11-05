@@ -74,7 +74,8 @@ class SmartPatternDetector:
         # Cherche des sous-éléments avec des classes spécifiques
         for child in element.find_all(['span', 'div', 'p', 'h1', 'h2', 'h3', 'h4', 'strong'], limit=20):
             child_text = child.get_text(strip=True)
-            child_classes = ' '.join(child.get('class', []))
+            child_class_list = child.get('class') or []
+            child_classes = ' '.join(child_class_list) if child_class_list else ''
 
             if child_text and child_text != text and len(child_text) > 2:
                 # Crée une clé basée sur la classe ou le tag
