@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Scraper Pro - Pipeline Complet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_modern.css') }}">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="logo-container">
+            <h1 class="logo-text">Seventic Scraper</h1>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="#" class="nav-item active" data-step="scraping" onclick="showStep('scraping')">
+                <span class="nav-icon">🔍</span>
+                <div class="nav-content">
+                    <div class="nav-label">Scraping</div>
+                    <div class="nav-desc">Extraire les entreprises</div>
+                </div>
+                <span class="nav-badge" id="badge-scraping">0</span>
+            </a>
+
+            <a href="#" class="nav-item" data-step="domains" onclick="showStep('domains')">
+                <span class="nav-icon">🌐</span>
+                <div class="nav-content">
+                    <div class="nav-label">Domaines</div>
+                    <div class="nav-desc">Trouver les sites web</div>
+                </div>
+                <span class="nav-badge" id="badge-domains">0</span>
+            </a>
+
+            <a href="#" class="nav-item" data-step="enrichment" onclick="showStep('enrichment')">
+                <span class="nav-icon">✨</span>
+                <div class="nav-content">
+                    <div class="nav-label">Enrichissement</div>
+                    <div class="nav-desc">Emails & contacts</div>
+                </div>
+                <span class="nav-badge" id="badge-enrichment">0</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <button class="btn-settings" onclick="showConfig()">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/>
+                    <path d="M17.5 10c0 .45-.05.9-.15 1.35l1.6 1.25-1.5 2.6-2-.8c-.65.5-1.4.85-2.2 1.05l-.35 2.1h-3l-.35-2.1c-.8-.2-1.55-.55-2.2-1.05l-2 .8-1.5-2.6 1.6-1.25c-.1-.45-.15-.9-.15-1.35s.05-.9.15-1.35l-1.6-1.25 1.5-2.6 2 .8c.65-.5 1.4-.85 2.2-1.05l.35-2.1h3l.35 2.1c.8.2 1.55.55 2.2 1.05l2-.8 1.5 2.6-1.6 1.25c.1.45.15.9.15 1.35z"/>
+                </svg>
+                Configuration
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="page-header">
+            <div class="header-title">
+                <h2 id="page-title">Scraping d'entreprises</h2>
+                <p id="page-subtitle">Analysez et extrayez les données d'entreprises</p>
+            </div>
+            <div class="header-actions">
+                <div class="pipeline-progress">
+                    <div class="progress-item" id="progress-scraping">
+                        <div class="progress-dot"></div>
+                        <span>Scraping</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-item" id="progress-domains">
+                        <div class="progress-dot"></div>
+                        <span>Domaines</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-item" id="progress-enrichment">
+                        <div class="progress-dot"></div>
+                        <span>Enrichissement</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Step: Scraping -->
+        <section id="section-scraping" class="content-section active">
+            <div class="grid-layout">
+                <!-- Analysis Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>🔍 Analyser une page</h3>
+                        <p>Détection automatique des patterns de données</p>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <label>URL à analyser</label>
+                            <input type="url" id="scrape-url" class="input" placeholder="https://example.com/annuaire">
+                        </div>
+                        <button class="btn btn-primary btn-block" onclick="analyzeUrl()">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
+                            </svg>
+                            Analyser les patterns
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pattern Selection -->
+                <div class="panel" id="pattern-panel" style="display: none;">
+                    <div class="panel-header">
+                        <h3>📊 Sélection du pattern</h3>
+                        <p>Choisissez le pattern contenant les entreprises</p>
+                    </div>
+                    <div class="panel-body">
+                        <div id="pattern-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column Mapping -->
+            <div class="panel" id="mapping-panel" style="display: none;">
+                <div class="panel-header">
+                    <h3>🎯 Mapping des colonnes</h3>
+                    <p>Sélectionnez la colonne contenant les noms d'entreprises</p>
+                </div>
+                <div class="panel-body">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Colonne "Nom d'entreprise"</label>
+                            <select id="company-column" class="input"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Pages à scraper</label>
+                            <select id="max-pages" class="input">
+                                <option value="1">1 (Test)</option>
+                                <option value="2" selected>2</option>
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="data-preview">
+                        <h4>Aperçu des données</h4>
+                        <div class="table-container">
+                            <table class="data-table" id="preview-table"></table>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-success btn-lg btn-block" onclick="startScraping()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/>
+                        </svg>
+                        Lancer le scraping complet
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step: Domains -->
+        <section id="section-domains" class="content-section">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>🌐 Recherche de domaines</h3>
+                    <p id="domains-subtitle">Trouvez automatiquement les sites web des entreprises</p>
+                </div>
+                <div class="panel-body">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="domains-total">0</div>
+                            <div class="stat-label">Entreprises à traiter</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-lg btn-block" onclick="startDomainFinder()" id="btn-start-domains">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/>
+                        </svg>
+                        Rechercher les domaines
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel" id="domains-results" style="display: none;">
+                <div class="panel-header">
+                    <h3>✅ Domaines trouvés</h3>
+                    <div class="header-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="exportData('domains', 'csv')">Exporter CSV</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="results-grid" id="domains-list"></div>
+                    <button class="btn btn-primary btn-lg btn-block" onclick="showStep('enrichment')">
+                        Continuer vers l'enrichissement
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step: Enrichment -->
+        <section id="section-enrichment" class="content-section">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>✨ Enrichissement des données</h3>
+                    <p id="enrichment-subtitle">Extraction d'emails, téléphones et LinkedIn</p>
+                </div>
+                <div class="panel-body">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="enrichment-total">0</div>
+                            <div class="stat-label">Entreprises avec domaines</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-lg btn-block" onclick="startEnrichment()" id="btn-start-enrichment">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/>
+                        </svg>
+                        Enrichir les données
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel" id="enrichment-results" style="display: none;">
+                <div class="panel-header">
+                    <h3>🎉 Données enrichies</h3>
+                    <div class="header-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="exportData('enriched', 'csv')">CSV</button>
+                        <button class="btn btn-sm btn-success" onclick="exportData('enriched', 'xlsx')">Excel</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="stats-row stats-row-4">
+                        <div class="stat-card stat-success">
+                            <div class="stat-value" id="stat-total">0</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                        <div class="stat-card stat-info">
+                            <div class="stat-value" id="stat-emails">0</div>
+                            <div class="stat-label">Emails</div>
+                        </div>
+                        <div class="stat-card stat-warning">
+                            <div class="stat-value" id="stat-phones">0</div>
+                            <div class="stat-label">Téléphones</div>
+                        </div>
+                        <div class="stat-card stat-purple">
+                            <div class="stat-value" id="stat-linkedin">0</div>
+                            <div class="stat-label">LinkedIn</div>
+                        </div>
+                    </div>
+                    <div class="results-grid" id="enrichment-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Progress Modal -->
+        <div class="modal" id="progress-modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="loading-spinner"></div>
+                        <h3 id="modal-title">Traitement en cours...</h3>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="modal-progress"></div>
+                        </div>
+                        <p id="modal-message">Initialisation...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config Modal -->
+        <div class="modal" id="config-modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>⚙️ Configuration API</h3>
+                        <button class="btn-close" onclick="closeConfig()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Clé API Pappers.fr</label>
+                            <input type="text" id="pappers-key" class="input" placeholder="Votre clé Pappers">
+                            <small>Gratuit 10,000/mois - <a href="https://www.pappers.fr/api" target="_blank">Obtenir</a></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Clé API Hunter.io</label>
+                            <input type="text" id="hunter-key" class="input" placeholder="Votre clé Hunter">
+                            <small>Gratuit 50/mois - <a href="https://hunter.io/users/sign_up" target="_blank">Obtenir</a></small>
+                        </div>
+                        <button class="btn btn-primary btn-block" onclick="saveConfig()">Sauvegarder</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app_modern.js') }}"></script>
+</body>
+</html>
